@@ -1,7 +1,8 @@
 # fCON17-manifest
 Demo prepared for **Famicon 17** event in Poland.  
 
-![fCON17-manifest](https://github.com/user-attachments/assets/98a0e1a4-8efe-49e4-bf13-9486aa5d8d73)
+![fCON17-manifest](https://github.com/user-attachments/assets/6576f8df-dff3-4090-8a11-29d573db6e79)
+
 
 More info about  
 - event: *Famicon 17*, https://contrabanda.eu/o-zlocie-famicon/  
