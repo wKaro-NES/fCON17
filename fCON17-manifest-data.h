@@ -107,7 +107,7 @@ typedef struct line {
   //{COLOR, "\x0F\x10\x21"},		//3rd
   //{COLOR, "\x21\x10\x21"},		//4th (last)
 
-//TODO - keep text in sync with WWW (current state 13/06/2025)
+
 
 const line screen[] = {
   {COLOR, "\x0F\x10\x30"},		//1st (default)
@@ -150,7 +150,7 @@ const line screen[] = {
   {TEXT,""},
   {TEXT,"22:00"},
   {TEXT,"Otwarcie-rozwarcie"},
-  {TEXT,"FamiCON 17"},
+  {TEXT,"fCON17"},
   {TEXT,""},
   {TEXT,"23:00"},
   {TEXT,"Folkowe piosenki"},
@@ -240,9 +240,6 @@ const line screen[] = {
   {TEXT,"Prawie Niezale;nych"},
   {TEXT,"<OsA>"},
   {TEXT,""},
-  {TEXT,"24:00"},
-  {TEXT,"???"},
-  {TEXT,""},
   {TEXT,"\x5B\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5D"},
   {TEXT_CURSOR,"\x5F PONIEDZIA(EK 14 lipca \x5F"},
   {TEXT,"\x5E\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x60"},
@@ -255,9 +252,6 @@ const line screen[] = {
   {TEXT,"Baseball - Cieksyn"},
   {TEXT,"Series 2025"},
   {TEXT,"<OsA>"},
-  {TEXT,""},
-  {TEXT,"16:00"},
-  {TEXT,"???"},
   {TEXT,""},
   {TEXT,"18:00"},
   {TEXT,"Ojciec Mateusz:"},
@@ -298,14 +292,20 @@ const line screen[] = {
   {TEXT_CURSOR,"\x5F  grafika     <daf>     \x5F"},
   {TEXT_CURSOR,"\x5F  technologia <Mcin>    \x5F"},
   {TEXT_CURSOR,"\x5F              <Verteks> \x5F"},
+  {TEXT_CURSOR,"\x5F  pistolet    <nesdoug> \x5F"},
   {TEXT,"\x5F                        \x5F"},
   {TEXT,"\x5F Realizacja:            \x5F"},
   {TEXT,"\x5F                        \x5F"},
   {TEXT_CURSOR,"\x5F  kod         <wKaro>   \x5F"},
+  {TEXT_CURSOR,"\x5F  testy       <Mcin>    \x5F"},
   {TEXT,"\x5F  muzyka                \x5F"},
   {TEXT,"\x5F      \"After the rain\"  \x5F"},
   {TEXT_CURSOR,"\x5F      <8bitworkshop.com>\x5F"},
   {TEXT,"\x5F                        \x5F"},
+  {TEXT,"\x5F Konfiguracja:          \x5F"},
+  {TEXT,"\x5F                        \x5F"},
+  {TEXT,"\x5F  port 1 Game pad       \x5F"},
+  {TEXT,"\x5F  port 2 Zapper         \x5F"},
   {TEXT,"\x5E\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x5C\x60"},
   {TEXT,""},
   {TEXT,""},

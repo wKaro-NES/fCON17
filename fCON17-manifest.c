@@ -5,8 +5,9 @@
     event: Famicon 17, https://contrabanda.eu/o-zlocie-famicon/
     tools: https://8bitworkshop.com/ and Steven Hugg's book
     hints:
-           full visual effects require PAL TV system,
-           PAD controller is supported
+           full visual cursor effects require PAL TV system,
+           PAD controller is supported on port 1
+           ZAPPER (light gun) is supported on port 2
 
 */
 
@@ -38,6 +39,10 @@ extern char after_the_rain_music_data[];
 
 //#link "fCON17-manifest-sfx.s"
 extern char sfx_sounds[];
+
+// zapper library
+#include "zaplib.h"
+//#link "zaplib.s"
 
 // ---------------------------------------------------------------------
 // ---------------------------------------------------------------------
@@ -79,71 +84,6 @@ void setup_graphics() {
   
   // turn on PPU
   ppu_on_all();
-}
-
-// ---------------------------------------------------------------------
-// sprites
-
-void prepare_metasprite(const byte* src, byte* dst, word size, bool oam_flip_h, bool oam_behind) {
-  word i;
-  for (i = 0; i < size - 1; i += 4){
-    *(dst+i+1) = *(src+i+1);
-    *(dst+i+2) = *(src+i+2) + METASPRITE_CHR_OFFSET;
-    if (oam_flip_h) {
-        *(dst+i) = 0x38 - *(src+i);
-      	*(dst+i+3) = *(src+i+3) | OAM_FLIP_H;
-    }
-    else {
-        *(dst+i) = *(src+i);
-        *(dst+i+3) = *(src+i+3);
-    }
-    if (oam_behind) {
-      *(dst+i+3) = *(dst+i+3) | OAM_BEHIND;
-    }
-    else {
-      *(dst+i+3) = *(dst+i+3) & ~OAM_BEHIND;
-    }
-  }
-  *(dst+i) = *(src+i);			//end of definition, should be always 0x80
-}
-
-// ----------------------------------------
-
-byte sprite_x = 50 , sprite_y = 50;	// sprite x/y positions
-sbyte sprite_dx = 1, sprite_dy = 2;	// sprite x/y deltas per frame (signed)
-byte oam_id;				// sprite ID
-
-byte metasprite_draw[METASPRITE_SIZE];	// current metasprite buffer (orientation, priotity etc.)
-
-void update_metasprite(byte pad) {
-  oam_id = 0;
-  oam_id = oam_meta_spr(sprite_x, sprite_y, oam_id, metasprite_draw);
-
-  if (pad & PAD_LEFT)			// decelerate
-    sprite_x -= sprite_dx;
-  if (pad & PAD_RIGHT)			// acceletare 
-    sprite_x += sprite_dx;
-
-  sprite_x += sprite_dx;
-  sprite_y += (rand() & 3) - sprite_dy;
-
-  if (sprite_y < 8) {
-    sprite_dy = -1;
-    prepare_metasprite(metasprite, metasprite_draw, METASPRITE_SIZE, sprite_dx < 0, FALSE);
-  }
-
-  if (sprite_y > (240 - 72)) {
-    sprite_dy = 2;
-    prepare_metasprite(metasprite, metasprite_draw, METASPRITE_SIZE, sprite_dx < 0, TRUE);
-  }
-
-  if (sprite_x > (256 - 72) || sprite_x < 8) {
-    sprite_dx = -sprite_dx;
-    prepare_metasprite(metasprite, metasprite_draw, METASPRITE_SIZE, sprite_dx < 0, sprite_dy > 0);
-  }
-
-  if (oam_id!=0) 
-    oam_hide_rest(oam_id);
 }
 
 // ---------------------------------------------------------------------
@@ -299,11 +239,192 @@ void update_sound() {
   }
 }
 
+void update_sound_gun() {
+  sfx_play(1,3);  
+}
+
+// ---------------------------------------------------------------------
+// zapper
+
+const byte palette_sprite_front[16] = { 
+  0x00,0x30,0x31,0x0F,
+  // red
+  0x00,0x26,0x16,0x0F,
+  0x00,0x27,0x38,0x0F,
+  0x00,0x35,0x38,0x0F
+};
+
+const byte palette_sprite_behind[16] = { 
+  0x00, 0x30,0x31,0x0F,
+  // gray
+  0x00,0x10,0x00,0x0F,
+  0x00,0x27,0x38,0x0F,
+  0x00,0x35,0x38,0x0F
+};
+
+const byte palette_sprite_target[16] = { 
+  0x00,0x30,0x30,0x30,
+  0x00,0x30,0x30,0x30,
+  0x00,0x30,0x30,0x30,
+  0x00,0x30,0x30,0x30
+};
+
+const byte palette_sprite_hit[16] = { 
+  0x00,0x30,0x31,0x0F,
+  // blue
+  0x00,0x22,0x12,0x0F,
+  0x00,0x27,0x38,0x0F,
+  0x00,0x35,0x38,0x0F
+};
+
+typedef enum sprite_state {
+  INIT,
+  FRONT,
+  HIT,
+  BEHIND
+} sprite_state;
+
+sprite_state sprite = INIT;
+
+void update_state(sprite_state state) {
+  sprite = state;
+  switch (state) {
+    default:
+    case INIT:
+    case FRONT:
+      pal_spr(palette_sprite_front);
+      break;
+    case (BEHIND):
+      pal_spr(palette_sprite_behind);
+      break;
+    case (HIT):
+      pal_spr(palette_sprite_hit);      
+      break;
+  }
+}
+
+bool zapper_ready = FALSE;
+byte zapper = 0;
+
+void check_zapper() {
+  zapper_ready = !zapper;		// prevents autofire
+  zapper = zap_shoot(1); 		// controller 2
+
+  if(zapper && zapper_ready) {
+    update_sound_gun();
+
+    //change sprite palette to white & screen color to true black
+    pal_col(0, 0x00);
+    pal_bg_bright(0);
+    pal_spr(palette_sprite_target);
+    
+    //turn off background
+    //eq ppu_mask(MASK_SPR + MASK_EDGE_SPR + MASK_EDGE_BG);
+    ppu_on_spr();
+    
+    //wait for next frame, turn on background
+    ppu_wait_nmi();
+    
+    //eq ppu_mask(MASK_SPR + MASK_BG + MASK_EDGE_SPR + MASK_EDGE_BG);
+    ppu_on_all();
+
+    //check button
+    if (zap_read(1)) {
+      update_state(HIT);
+    }
+    else{
+      update_state(FRONT);
+    }
+    
+    //restore colors
+    pal_col(0, COLOR_SCREEN);
+    pal_bg_bright(4);
+  }
+}
+
+// sprites
+
+void prepare_metasprite(const byte* src, byte* dst, word size, bool oam_flip_h, bool oam_behind) {
+  word i;
+  for (i = 0; i < size - 1; i += 4){
+    *(dst+i+1) = *(src+i+1);
+    *(dst+i+2) = *(src+i+2) + METASPRITE_CHR_OFFSET;
+    if (oam_flip_h) {
+        *(dst+i) = 0x38 - *(src+i);
+      	*(dst+i+3) = *(src+i+3) | OAM_FLIP_H;
+    }
+    else {
+        *(dst+i) = *(src+i);
+        *(dst+i+3) = *(src+i+3);
+    }
+    if (oam_behind) {
+      *(dst+i+3) = *(dst+i+3) | OAM_BEHIND;
+    }
+    else {
+      *(dst+i+3) = *(dst+i+3) & ~OAM_BEHIND;
+    }
+  }
+  *(dst+i) = *(src+i);			//end of definition, should be always 0x80
+}
+
+// ----------------------------------------
+
+byte sprite_x = 50 , sprite_y = 50;	// sprite x/y positions
+sbyte sprite_dx = 1, sprite_dy = 2;	// sprite x/y deltas per frame (signed)
+byte oam_id;				// sprite ID
+
+byte metasprite_draw[METASPRITE_SIZE];	// current metasprite buffer (orientation, priority etc.)
+
+#define SPRITE_X_MAX (256 - 72)
+#define SPRITE_X_MIN (8)
+void update_metasprite(byte pad) {
+  oam_id = 0;
+  oam_id = oam_meta_spr(sprite_x, sprite_y, oam_id, metasprite_draw);
+
+  //manual move disruption
+  if ( sprite_x > SPRITE_X_MIN && sprite_x < SPRITE_X_MAX) {
+    if (pad & PAD_LEFT)		// decelerate
+      sprite_x -= sprite_dx;
+    if (pad & PAD_RIGHT)	// accelerate 
+      sprite_x += sprite_dx;
+  }
+
+  sprite_x += sprite_dx;
+  sprite_y += (rand() & 3) - sprite_dy;
+
+  // now it is time to use light gun to kill the fish
+  if (sprite == FRONT) {
+    check_zapper(); 
+  }
+  
+  //check boundaries
+  if (sprite_y < 8) {
+    sprite_dy = -1;
+    prepare_metasprite(metasprite, metasprite_draw, METASPRITE_SIZE, sprite_dx < 0, FALSE);
+    update_state(FRONT);
+  }
+
+  if (sprite_y > (240 - 72)) {
+    sprite_dy = 2;
+    prepare_metasprite(metasprite, metasprite_draw, METASPRITE_SIZE, sprite_dx < 0, TRUE);
+    update_state(BEHIND);
+  }
+
+  if (sprite == HIT || sprite_x > SPRITE_X_MAX || sprite_x < SPRITE_X_MIN) {
+    sprite_dx = -sprite_dx;
+    prepare_metasprite(metasprite, metasprite_draw, METASPRITE_SIZE, sprite_dx < 0, sprite_dy > 0);
+  }
+
+  if (oam_id!=0) 
+    oam_hide_rest(oam_id);
+}
+
+
 // ---------------------------------------------------------------------
 // ---------------------------------------------------------------------
 // main loop
 
-#define IDLE_COUNTER 7*15
+#define IDLE_COUNTER 3*50
 #define IDLE_FRAME_SKIP 0x01
 #define FLASH_INITIAL_FRAME_SKIP 100
 #define FLASH_FULL_INITIAL_FRAME_SKIP 300
