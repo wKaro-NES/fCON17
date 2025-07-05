@@ -88,7 +88,8 @@ typedef enum line_type {
   LOGO,
   TEXT,
   TEXT_CURSOR,
-  COLOR
+  COLOR,
+  SHOT
 } line_type;
 
 typedef struct line {
@@ -313,10 +314,9 @@ const line screen[] = {
   {TEXT,""},
   {TEXT,""},
   {TEXT,""},
+  {TEXT,""},
+  {TEXT,""},
   {COLOR, "\x0F\x10\x31"},		//2nd  
-  {TEXT,""},
-  {TEXT,""},
-  {TEXT,""},
   {TEXT,""},
   {TEXT,""},
   {TEXT,""},
@@ -327,6 +327,10 @@ const line screen[] = {
   {TEXT,""},
   {TEXT,""},
   {TEXT,""},
+  {TEXT,""},
+  {TEXT,""},
+  {TEXT,""},
+  {SHOT,""},
   {TEXT,""},
   {TEXT,""},
   {TEXT,""},

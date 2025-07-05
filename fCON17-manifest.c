@@ -192,6 +192,8 @@ void update_screen(const line* line, byte col, byte row, byte cursor, bool both)
 
 // ----------------------------------------
 
+bool zapper_demo;
+
 word text_idx = 0;		// text index in table
 word text_idx_last = 0;
 
@@ -207,9 +209,12 @@ void prepare_idx() {
 const line* prepare_line() {
   while (TRUE) {
     prepare_idx();
-    if (screen[text_idx].type != COLOR)
+    if (screen[text_idx].type < COLOR)
       break;
-    update_color(&screen[text_idx]);
+    if (screen[text_idx].type == COLOR)
+      update_color(&screen[text_idx]);
+    else
+      zapper_demo = TRUE;
     text_idx++;
   };
   
@@ -303,6 +308,7 @@ void update_state(sprite_state state) {
   }
 }
 
+bool zapper_demo = FALSE;		// demo shot
 bool zapper_ready = FALSE;
 byte zapper = 0;
 
@@ -310,7 +316,7 @@ void check_zapper() {
   zapper_ready = !zapper;		// prevents autofire
   zapper = zap_shoot(1); 		// controller 2
 
-  if(zapper && zapper_ready) {
+  if((zapper && zapper_ready) || zapper_demo) {
     update_sound_gun();
 
     //change sprite palette to white & screen color to true black
@@ -329,8 +335,9 @@ void check_zapper() {
     ppu_on_all();
 
     //check button
-    if (zap_read(1)) {
+    if (zap_read(1) || zapper_demo) {
       update_state(HIT);
+      zapper_demo = FALSE;
     }
     else{
       update_state(FRONT);
@@ -392,13 +399,8 @@ void update_metasprite(byte pad) {
   sprite_x += sprite_dx;
   sprite_y += (rand() & 3) - sprite_dy;
 
-  // now it is time to use light gun to kill the fish
-  if (sprite == FRONT) {
-    check_zapper(); 
-  }
-  
   //check boundaries
-  if (sprite_y < 8) {
+  if (sprite_y < 8 || zapper_demo) {
     sprite_dy = -1;
     prepare_metasprite(metasprite, metasprite_draw, METASPRITE_SIZE, sprite_dx < 0, FALSE);
     update_state(FRONT);
@@ -408,6 +410,11 @@ void update_metasprite(byte pad) {
     sprite_dy = 2;
     prepare_metasprite(metasprite, metasprite_draw, METASPRITE_SIZE, sprite_dx < 0, TRUE);
     update_state(BEHIND);
+  }
+
+  // now it is time to use light gun to kill the fish
+  if (sprite == FRONT) {
+    check_zapper(); 
   }
 
   if (sprite == HIT || sprite_x > SPRITE_X_MAX || sprite_x < SPRITE_X_MIN) {
